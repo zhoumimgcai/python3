@@ -22,9 +22,10 @@ if __name__ == "__main__":
 	host = input("IP:> ")
 	user = input("username:> (default:root)")
 	if not user :
-		user == "root"
+		user = "root"
+		print(user,"名字")
 	pwd = getpass.getpass("password:> ")
-	print(user)
+	
 	while 1:
 		comm = input("command:> ")
 		if not comm :
