@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+import threading
+import os
+import platform
+import getpass
+import paramiko
+
+def pf():
+    return  platform.architecture()[1]
+
+def ssh(host, user, command, pwd):
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=host, username=user, password=pwd)
+    except TimeoutError:
+        print("["+user+"@"+host+"] OUT:"+"用户名或IP错误")
+    except paramiko.ssh_exception.AuthenticationException:
+        print("["+user+"@"+host+"] OUT:"+"密码错误")
+        exit(3)
+    except AttributeError:
+        print("["+user+"@"+host+"] OUT:"+"类型错误")
+        exit(4)
+    stdin, stdout, stderr = ssh.exec_command(command.strip())
+
+    out = stdout.read()
+    error = stderr.read()
+
+    if out:
+        print("[%s] OUT:>\n%s" % (host, out.decode("utf-8")), end="")
+    if not out:
+        if error:
+            print("[%s] ERROR:>\n%s" % (host, error.decode("utf-8")))
+        else:
+            print("[%s] EMPTY:> \n无内容返回" % (host))
+
+
+def env_check(pf):
+    if "Windows" in pf:
+        passh = "C:\passh.txt"
+        if not os.path.exists(passh):
+            print("你使用的是windows环境，请编写一个名为passh.txt文件放入‘C:\’下即可\n"
+                  "格式：> IP(Host)，user,command。请以英文逗号分隔。空格两边视为整体。")
+            exit(1)
+    elif "ELF" == pf:
+        passh = "/opt/passh.txt"
+        if not os.path.exists(passh):
+            print("你使用的是linux环境，请编写一个名为passh.txt文件放入‘/opt'下即可\n"
+                  "格式：> IP(Host)，user,command。请以英文逗号分隔。空格两边视为整体。")
+            exit(2)
+    return passh
+
+if __name__ == "__main__":
+    hupc = []
+    passh=env_check(pf())
+    with open(passh, "r") as fobj:
+        for i in fobj.readlines():
+            j=i.split(",")
+            #print(j)
+            pwd=getpass.getpass("请输入"+j[1]+"@"+j[0]+"的密码:> \n")
+            hupc.append(j+[pwd])
+            #print(hupc)
+    for i in hupc:
+        tup = tuple(i)
+        t = threading.Thread(target=ssh, args=tup)
+        t.start()
